@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent">
+  <meta name="description"
+        content="จับเวลากิจกรรมประจำวัน พร้อมรายงานและใช้งานออฟไลน์">
+
+  <title>DayFlow — เวลาของคุณ</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+
+  <script src="./app.js" defer></script>
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="./" aria-label="DayFlow หน้าหลัก">
+        <span class="brand-mark">D</span>
+        <span>DayFlow<small>MAKE TIME MATTER</small></span>
+      </a>
+
+      <nav class="navigation" aria-label="เมนูหลัก">
+        <button class="nav-button active"
+                data-view="timer" aria-current="page">
+          <span>◷</span> จับเวลา
+        </button>
+        <button class="nav-button" data-view="reports">
+          <span>▥</span> รายงาน
+        </button>
+        <button class="nav-button" data-view="settings">
+          <span>⚙</span> จัดการ
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <span class="status-dot"></span>
+        ข้อมูลเก็บในเครื่องคุณ
+        <small>ไม่ส่งประวัติกิจกรรมขึ้น GitHub</small>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">YOUR TIME, YOUR CHOICE</p>
+          <h1 id="page-title">วันนี้ใช้เวลาไปกับอะไร?</h1>
+          <p id="today-label" class="muted"></p>
+        </div>
+
+        <div class="top-actions">
+          <span id="network-status" class="badge">กำลังเริ่มต้น</span>
+          <button id="install-button" class="button small" hidden>
+            ติดตั้งแอป
+          </button>
+        </div>
+      </header>
+
+      <div id="app-status" class="notice" role="status">
+        กำลังเปิดฐานข้อมูล…
+      </div>
+
+      <div id="update-banner" class="notice" hidden>
+        <span>มีเวอร์ชันใหม่พร้อมใช้งาน</span>
+        <button id="update-button" class="button small">
+          อัปเดต
+        </button>
+      </div>
+
+      <!-- TIMER -->
+      <section id="view-timer" class="view">
+        <div class="timer-panel card">
+          <div class="timer-top">
+            <span id="timer-state" class="pill">พร้อมเริ่มวันของคุณ</span>
+            <button class="button ghost small" data-manual>
+              ＋ บันทึกย้อนหลัง
+            </button>
+          </div>
+
+          <div class="timer-body">
+            <div id="active-icon" class="activity-orb">◷</div>
+            <p id="active-name" class="muted">เลือกกิจกรรมด้านล่างเพื่อเริ่ม</p>
+            <div id="timer-display" class="timer-digits"
+                 role="timer" aria-label="เวลาที่ผ่านไป">
+              00:00:00
+            </div>
+            <p id="timer-hint" class="muted">
+              ทำทีละอย่าง แล้วค่อย ๆ เห็นภาพวันของคุณ
+            </p>
+            <button id="stop-button" class="button danger" hidden>
+              ■ หยุดและบันทึก
+            </button>
+          </div>
+
+          <div class="timer-bottom">
+            <span>◉ บันทึกเวลาเริ่มลงเครื่องทันที</span>
+            <span>ปิดหน้าจอแล้วกลับมาดูต่อได้</span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat card">
+            <p>บันทึกแล้ววันนี้</p>
+            <strong id="today-total">0 นาที</strong>
+            <small>เฉพาะกิจกรรมที่จบแล้ว</small>
+          </article>
+          <article class="stat card">
+            <p>กิจกรรมวันนี้</p>
+            <strong id="today-count">0</strong>
+            <small>รายการที่มีเวลาอยู่ในวันนี้</small>
+          </article>
+          <article class="stat card">
+            <p>คะแนนคุณค่าเฉลี่ย</p>
+            <strong id="today-score">—</strong>
+            <small>ถ่วงน้ำหนักตามระยะเวลา</small>
+          </article>
+        </div>
+
+        <div class="section-heading">
+          <div>
+            <h2>เลือกกิจกรรม</h2>
+            <p class="muted">กดหนึ่งครั้งเพื่อเริ่มจับเวลา</p>
+          </div>
+          <button id="add-category-button" class="button">
+            ＋ เพิ่มกิจกรรม
+          </button>
+        </div>
+
+        <div id="activity-grid" class="activity-grid"></div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="view-reports" class="view" hidden>
+        <div class="card filters">
+          <label>ตั้งแต่วันที่
+            <input id="report-from" type="date" required>
+          </label>
+          <label>ถึงวันที่
+            <input id="report-to" type="date" required>
+          </label>
+          <div class="filter-buttons">
+            <button id="range-today" class="button ghost">วันนี้</button>
+            <button id="range-week" class="button ghost">7 วัน</button>
+            <button id="export-csv" class="button primary">
+              ↓ Export CSV
+            </button>
+          </div>
+        </div>
+
+        <p id="range-error" class="error-text" role="alert"></p>
+
+        <div class="stats-grid">
+          <article class="stat card">
+            <p>เวลาที่บันทึก</p>
+            <strong id="report-total">0 นาที</strong>
+            <small>เฉพาะส่วนที่อยู่ในช่วงวันที่เลือก</small>
+          </article>
+          <article class="stat card">
+            <p>จำนวนรายการ</p>
+            <strong id="report-count">0</strong>
+            <small>ไม่นับกิจกรรมที่ยังจับเวลาอยู่</small>
+          </article>
+          <article class="stat card">
+            <p>คะแนนคุณค่าเฉลี่ย</p>
+            <strong id="report-score">—</strong>
+            <small>เป็นการประเมินส่วนบุคคล</small>
+          </article>
+        </div>
+
+        <div class="card report-card">
+          <div class="section-heading">
+            <div>
+              <h2>เวลาของคุณไปอยู่ที่ไหน</h2>
+              <p class="muted">สัดส่วนจากเวลาที่บันทึก ไม่ใช่ 24 ชั่วโมงทั้งหมด</p>
+            </div>
+          </div>
+          <div id="breakdown"></div>
+          <p id="report-insight" class="insight"></p>
+        </div>
+
+        <div class="card report-card">
+          <div class="section-heading">
+            <div>
+              <h2>ประวัติกิจกรรม</h2>
+              <p id="history-caption" class="muted"></p>
+            </div>
+            <button class="button small" data-manual>
+              ＋ เพิ่มย้อนหลัง
+            </button>
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="view" hidden>
+        <div class="card report-card">
+          <div class="section-heading">
+            <div>
+              <h2>กิจกรรมของฉัน</h2>
+              <p class="muted">
+                ซ่อนกิจกรรมที่ไม่ใช้ได้ โดยประวัติเดิมยังอยู่
+              </p>
+            </div>
+            <button id="settings-add-category" class="button primary">
+              ＋ เพิ่ม
+            </button>
+          </div>
+          <div id="category-list"></div>
+        </div>
+
+        <div class="card report-card">
+          <h2>ข้อมูลและการสำรอง</h2>
+          <p class="muted">
+            ข้อมูลอยู่ในเบราว์เซอร์ของเครื่องนี้ ไม่ซิงก์ข้ามเครื่องอัตโนมัติ
+            การล้างข้อมูลเว็บไซต์ เปลี่ยนเบราว์เซอร์
+            หรือระบบลบพื้นที่จัดเก็บ อาจทำให้ข้อมูลหายได้
+          </p>
+          <div class="button-row">
+            <button id="backup-button" class="button primary">
+              ↓ สำรอง JSON
+            </button>
+            <button id="restore-button" class="button">
+              ↑ กู้คืน JSON
+            </button>
+            <button id="persist-button" class="button ghost">
+              ขอเก็บข้อมูลถาวร
+            </button>
+          </div>
+          <input id="restore-file" type="file"
+                 accept=".json,application/json" hidden>
+          <p id="storage-status" class="muted small-text"></p>
+        </div>
+
+        <div class="card report-card">
+          <h2>วิธีอ่านคะแนนคุณค่า</h2>
+          <p class="muted">
+            1 = รู้สึกว่าไม่ค่อยตอบโจทย์คุณ
+            และ 5 = รู้สึกว่ามีคุณค่ามาก
+            แก้คะแนนของแต่ละรายการได้ภายหลัง
+            การพักผ่อน กินข้าว และดูแลตัวเองก็มีคุณค่าได้
+            แอปไม่ได้ตัดสินว่ากิจกรรมใดดีหรือไม่ดีโดยอัตโนมัติ
+          </p>
+          <p class="muted">
+            เวลาข้ามเที่ยงคืนจะแบ่งตามวันให้ตอนคำนวณรายงาน
+            โดยอิงเขตเวลาปัจจุบันของอุปกรณ์
+            หากเปลี่ยนนาฬิกาเครื่องระหว่างจับเวลา
+            ควรตรวจและแก้รายการภายหลัง
+          </p>
+        </div>
+      </section>
+
+      <footer>DayFlow · เวลาที่เข้าใจ ช่วยให้เลือกได้ดีขึ้น</footer>
+    </main>
+  </div>
+
+  <!-- MANUAL / EDIT ENTRY -->
+  <dialog id="entry-dialog">
+    <form id="entry-form">
+      <div class="dialog-heading">
+        <h2 id="entry-title">บันทึกย้อนหลัง</h2>
+        <button type="button" class="icon-button"
+                data-close="entry-dialog" aria-label="ปิด">✕</button>
+      </div>
+
+      <input id="entry-id" type="hidden">
+
+      <label>กิจกรรม
+        <select id="entry-category" required></select>
+      </label>
+
+      <div class="form-grid">
+        <label>เริ่มเมื่อ
+          <input id="entry-start" type="datetime-local"
+                 step="1" required>
+        </label>
+        <label>สิ้นสุดเมื่อ
+          <input id="entry-end" type="datetime-local"
+                 step="1" required>
+        </label>
+      </div>
+
+      <label>คะแนนคุณค่า
+        <select id="entry-score">
+          <option value="1">1 — ไม่ค่อยตอบโจทย์</option>
+          <option value="2">2 — มีคุณค่าบ้าง</option>
+          <option value="3">3 — ปานกลาง</option>
+          <option value="4">4 — มีคุณค่า</option>
+          <option value="5">5 — มีคุณค่ามาก</option>
+        </select>
+      </label>
+
+      <label>บันทึกเพิ่มเติม
+        <textarea id="entry-note" rows="3" maxlength="1000"
+                  placeholder="เช่น อ่านหนังสือจบ 20 หน้า"></textarea>
+      </label>
+
+      <p class="muted small-text">
+        ไม่อนุญาตเวลาทับซ้อนหรือเวลาในอนาคต
+        ถ้าทำกิจกรรมข้ามวัน ให้เลือกวันที่สิ้นสุดเป็นวันถัดไป
+      </p>
+
+      <div class="dialog-actions">
+        <button type="button" class="button ghost"
+                data-close="entry-dialog">ยกเลิก</button>
+        <button type="submit" class="button primary">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- CATEGORY -->
+  <dialog id="category-dialog">
+    <form id="category-form">
+      <div class="dialog-heading">
+        <h2 id="category-title">เพิ่มกิจกรรม</h2>
+        <button type="button" class="icon-button"
+                data-close="category-dialog" aria-label="ปิด">✕</button>
+      </div>
+
+      <input id="category-id" type="hidden">
+
+      <label>ชื่อกิจกรรม
+        <input id="category-name" maxlength="40"
+               placeholder="เช่น ฝึกภาษาอังกฤษ" required>
+      </label>
+
+      <div class="form-grid">
+        <label>ไอคอน
+          <select id="category-icon">
+            <option>🍽️</option>
+            <option>🧺</option>
+            <option>🧹</option>
+            <option>🫧</option>
+            <option>🚿</option>
+            <option>🏃</option>
+            <option>📚</option>
+            <option>📈</option>
+            <option>💼</option>
+            <option>🎯</option>
+            <option>🛌</option>
+            <option>☕</option>
+            <option>🎮</option>
+            <option>🎵</option>
+            <option>🌱</option>
+          </select>
+        </label>
+
+        <label>สีประจำกิจกรรม
+          <input id="category-color" type="color" value="#43d9bd">
+        </label>
+      </div>
+
+      <label>คะแนนเริ่มต้น
+        <select id="category-score">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </label>
+
+      <p class="muted small-text">
+        เปลี่ยนชื่อแล้ว รายงานเก่าจะแสดงชื่อใหม่ด้วย
+        แต่การเปลี่ยนคะแนนเริ่มต้นไม่เปลี่ยนคะแนนรายการเก่า
+      </p>
+
+      <div class="dialog-actions">
+        <button type="button" class="button ghost"
+                data-close="category-dialog">ยกเลิก</button>
+        <button type="submit" class="button primary">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"
+       aria-live="polite" hidden></div>
+</body>
+</html>
